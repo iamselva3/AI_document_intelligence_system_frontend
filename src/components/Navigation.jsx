@@ -1,15 +1,23 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Upload, Activity, FileText } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Upload, Activity, FileText, FileSearch, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const Navigation = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout, user } = useAuth();
     
     const links = [
         { name: 'Dashboard', path: '/', icon: Home },
-        { name: 'Upload Invoice', path: '/upload', icon: Upload },
+        { name: 'PDF Summarizer', path: '/summarize', icon: FileSearch },
         { name: 'Monitoring Metrics', path: '/metrics', icon: Activity },
     ];
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
         <nav className="w-64 glass-panel border-r border-slate-800 m-4 p-4 flex flex-col h-[calc(100vh-2rem)]">
@@ -18,7 +26,7 @@ const Navigation = () => {
                 <h1 className="text-xl font-bold tracking-wider">AI <span className="text-primary">Docs</span></h1>
             </div>
             
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2 flex-1">
                 {links.map((link) => {
                     const isActive = location.pathname === link.path;
                     const Icon = link.icon;
@@ -41,6 +49,20 @@ const Navigation = () => {
                         </Link>
                     )
                 })}
+            </div>
+
+            <div className="mt-auto border-t border-slate-800 pt-4 space-y-4">
+                <div className="px-4 py-2">
+                    <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Authenticated as</p>
+                    <p className="text-sm font-semibold text-slate-200 truncate">{user?.email}</p>
+                </div>
+                <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all duration-300"
+                >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Logout</span>
+                </button>
             </div>
         </nav>
     );

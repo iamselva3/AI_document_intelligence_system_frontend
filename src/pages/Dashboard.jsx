@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getDocuments } from '../services/endpoints';
+import { getSummaries } from '../services/endpoints';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FileSearch, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { FileText, Clock, ChevronRight } from 'lucide-react';
 
 const Dashboard = () => {
     const [documents, setDocuments] = useState([]);
@@ -14,8 +14,9 @@ const Dashboard = () => {
 
     const fetchDocs = async () => {
         try {
-            const res = await getDocuments();
-            setDocuments(res.data.data);
+            const res = await getSummaries();
+            // Assuming getSummaries returns an array of summaries
+            setDocuments(res.data);
         } catch (e) {
             console.error("Failed fetching", e);
         } finally {
@@ -23,72 +24,74 @@ const Dashboard = () => {
         }
     };
 
-    const StatusBadge = ({ status }) => {
-        const styles = {
-            UPLOADED: "bg-slate-500/20 text-slate-300 border-slate-500/50",
-            QUEUED: "bg-blue-500/20 text-blue-300 border-blue-500/50",
-            PROCESSING: "bg-yellow-500/20 text-yellow-300 border-yellow-500/50",
-            COMPLETED: "bg-green-500/20 text-green-300 border-green-500/50",
-            FAILED: "bg-red-500/20 text-red-300 border-red-500/50"
-        };
-        return (
-            <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${styles[status]}`}>
-                {status}
-            </span>
-        );
-    };
-
-    if (loading) return <div className="text-center mt-20">Loading...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center h-[60vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+    );
 
     return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold">Processed Invoices</h2>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-8 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-10">
+                <div>
+                    <h2 className="text-4xl font-extrabold text-white tracking-tight">Processed Documents</h2>
+                    <p className="text-slate-400 mt-2">View and manage your AI-summarized PDF files</p>
+                </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {documents.map((doc, idx) => (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-                        key={doc._id} 
-                        className="glass-panel p-5 group hover:border-primary/50 transition-colors"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <FileSearch className="w-8 h-8 text-primary opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-                            <StatusBadge status={doc.status} />
-                        </div>
-                        
-                        <h3 className="font-semibold text-lg mb-1 truncate" title={doc.originalFileName}>
-                            {doc.originalFileName}
-                        </h3>
-                        <p className="text-xs text-slate-400 mb-4">
-                            Uploaded: {new Date(doc.uploadedAt).toLocaleString()}
-                        </p>
-                        
-                        {doc.confidenceScore !== undefined && (
-                            <div className="mb-4">
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span>Confidence Score</span>
-                                    <span className={doc.confidenceScore >= 80 ? 'text-green-400' : 'text-yellow-400'}>
-                                        {doc.confidenceScore}%
-                                    </span>
+            {documents.length === 0 ? (
+                <div className="text-center py-20 glass-panel">
+                    <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                    <p className="text-slate-400 text-lg italic">No documents processed yet.</p>
+                    <Link to="/summarize" className="inline-block mt-4 text-primary hover:underline">
+                        Start by summarizing a PDF →
+                    </Link>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {documents.map((doc, idx) => (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+                            key={doc._id} 
+                            className="glass-panel p-6 group hover:border-primary/40 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 flex flex-col h-full"
+                        >
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="p-3 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                                    <FileText className="w-6 h-6" />
                                 </div>
-                                <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                    <div 
-                                        className={`h-1.5 rounded-full ${doc.confidenceScore >= 80 ? 'bg-green-500' : 'bg-yellow-500'}`} 
-                                        style={{ width: `${doc.confidenceScore}%` }}
-                                    ></div>
-                                </div>
+                                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold bg-slate-800/50 px-2 py-1 rounded">
+                                    {new Date(doc.uploadedAt).toLocaleDateString()}
+                                </span>
                             </div>
-                        )}
+                            
+                            <h3 className="font-bold text-xl mb-2 text-slate-100 line-clamp-1 group-hover:text-primary transition-colors" title={doc.originalFileName}>
+                                {doc.originalFileName}
+                            </h3>
+                            
+                            <div className="flex items-center text-xs text-slate-500 mb-4 space-x-3">
+                                <span className="flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {(doc.fileSize / (1024 * 1024)).toFixed(2)} MB
+                                </span>
+                            </div>
 
-                        <Link to={`/document/${doc._id}`} className="block w-full text-center py-2 mt-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors font-medium text-sm border border-primary/20">
-                            Review & Inspect Fields
-                        </Link>
-                    </motion.div>
-                ))}
-            </div>
+                            <p className="text-sm text-slate-400 mb-6 line-clamp-3 italic leading-relaxed flex-grow">
+                                "{doc.summary}"
+                            </p>
+                            
+                            <Link 
+                                to={`/document/${doc._id}`} 
+                                className="mt-auto flex items-center justify-between w-full p-3 bg-white/5 hover:bg-primary text-white rounded-xl transition-all duration-300 group/btn"
+                            >
+                                <span className="text-sm font-semibold">View Full Details</span>
+                                <ChevronRight className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform" />
+                            </Link>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
         </motion.div>
     );
 };
+
 export default Dashboard;
